@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Konseling</title>
+
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-gray-100 to-gray-300 min-h-screen">
+
+    <div class="max-w-xl mx-auto pt-10">
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+
+            <h2 class="text-center text-2xl font-bold mb-5 text-gray-700">
+                Konseling Online
+            </h2>
+
+            <!-- kotak chat -->
+            <div id="chatBox"
+                class="h-96 bg-gray-50 p-4 border border-gray-200 rounded-xl overflow-y-auto shadow-inner">
+            </div>
+
+            <!-- input chat -->
+            <div class="flex mt-4">
+                <input id="msg"
+                    class="flex-1 border border-gray-300 p-3 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-400 outline-none"
+                    placeholder="Tulis pesan...">
+
+                <button onclick="sendMsg()"
+                    class="ml-3 bg-blue-600 text-white px-5 rounded-xl hover:bg-blue-700 shadow">
+                    Kirim
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const role = localStorage.getItem("role");
+    
+        async function sendMsg() {
+            const message = document.getElementById("msg").value;
+            if (!message) return;
+    
+            await fetch(`http://localhost:8000/send?sender=${role}&message=${message}`, {
+                method: "POST"
+            });
+    
+            document.getElementById("msg").value = "";
+            loadMessages();
+        }
+    
+        async function loadMessages() {
+            const res = await fetch("http://localhost:8000/messages");
+            const data = await res.json();
+    
+            const chatBox = document.getElementById("chatBox");
+            chatBox.innerHTML = "";
+    
+            data.forEach(text => {
+                const div = document.createElement("div");
+    
+                // Ambil nama pengirim & isi pesan
+                const [sender, content] = text.split(": ");
+    
+                // Tentukan apakah pesan ini milik user yang login
+                const isMine =
+                    (role === "student" && sender === "Siswa") ||
+                    (role === "teacher" && sender === "Guru BK");
+    
+                // Styling bubble sesuai role
+                div.className =
+                    "max-w-xs p-3 mb-3 rounded-xl shadow " +
+                    (isMine
+                        ? "ml-auto bg-blue-500 text-white"
+                        : "mr-auto bg-gray-200 text-gray-900");
+    
+                div.textContent = text;
+                chatBox.appendChild(div);
+            });
+    
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    
+        setInterval(loadMessages, 1000);
+    </script>
+    
+
+</body>
+</html>
